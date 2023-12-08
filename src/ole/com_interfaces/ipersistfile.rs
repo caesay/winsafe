@@ -11,12 +11,11 @@ use crate::vt::*;
 #[repr(C)]
 pub struct IPersistFileVT {
 	pub IUnknownVT: IUnknownVT,
-	pub GetClassID: fn(COMPTR, PVOID) -> HRES,
+    pub GetCurFile: fn(COMPTR, PVOID) -> HRES,
     pub IsDirty: fn(COMPTR) -> HRES,
     pub Load: fn(COMPTR, PCSTR, u32) -> HRES,
     pub Save: fn(COMPTR, PCSTR, i32) -> HRES,
     pub SaveCompleted: fn(COMPTR, PCSTR) -> HRES,
-    pub GetCurFile: fn(COMPTR, PVOID) -> HRES,
 }
 
 com_interface! { IPersistFile: "0000010B-0000-0000-C000-000000000046";
