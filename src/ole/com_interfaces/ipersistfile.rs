@@ -10,7 +10,8 @@ use crate::vt::*;
 /// [`IPersistFile`](crate::IPersistFile) virtual table.
 #[repr(C)]
 pub struct IPersistFileVT {
-	pub IPersistVT: IPersistVT,
+	pub IUnknownVT: IUnknownVT,
+	pub GetClassID: fn(COMPTR, PVOID) -> HRES,
     pub IsDirty: fn(COMPTR) -> HRES,
     pub Load: fn(COMPTR, PCSTR, u32) -> HRES,
     pub Save: fn(COMPTR, PCSTR, i32) -> HRES,
@@ -27,7 +28,6 @@ com_interface! { IPersistFile: "0000010B-0000-0000-C000-000000000046";
     /// when the object goes out of scope.
 }
 
-impl ole_IPersist for IPersistFile {}
 impl ole_IPersistFile for IPersistFile {}
 
 /// This trait is enabled with the `ole` feature, and provides methods for
@@ -38,13 +38,21 @@ impl ole_IPersistFile for IPersistFile {}
 /// ```no_run
 /// use winsafe::prelude::*;
 /// ```
-pub trait ole_IPersistFile: ole_IPersist {
-    // /// [`IPersistFile::GetCurFile`](https://learn.microsoft.com/en-us/windows/win32/api/objidl/nf-objidl-ipersistfile-getcurfile)
-    // /// method.
-    // #[must_use]
-    // fn GetCurFile(&self) -> HrResult<String> {
-    //     todo!();
-    // }
+pub trait ole_IPersistFile: ole_IUnknown {
+	/// [`IPersist::GetClassID`](https://learn.microsoft.com/en-us/windows/win32/api/objidl/nf-objidl-ipersist-getclassid)
+	/// method.
+	#[must_use]
+	fn GetClassID(&self) -> HrResult<co::CLSID> {
+		let mut clsid = co::CLSID::default();
+		ok_to_hrresult(
+			unsafe {
+				(vt::<IPersistVT>(self).GetClassID)(
+					self.ptr(),
+					&mut clsid as *mut _ as _,
+				)
+			},
+		).map(|_| clsid)
+	}
 
     /// [`IPersistFile::IsDirty`](https://learn.microsoft.com/en-us/windows/win32/api/objidl/nf-objidl-ipersistfile-isdirty)
     /// method.
